@@ -1,0 +1,636 @@
+<html lang="cs"><head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>OPERACE SVÁTEK</title>
+<link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&amp;display=swap" rel="stylesheet">
+<style>
+  * { box-sizing: border-box; }
+
+  body {
+    margin: 0; min-height: 100vh;
+    font-family: "Press Start 2P", "Courier New", monospace;
+    color: #f7e9f0;
+    background:
+      radial-gradient(ellipse at 20% 10%, #3b2550 0%, transparent 55%),
+      radial-gradient(ellipse at 85% 90%, #5a2a4a 0%, transparent 55%),
+      linear-gradient(180deg, #1a1126 0%, #120b1c 100%);
+    display: flex; justify-content: center; align-items: center;
+    padding: 18px; overflow-x: hidden;
+  }
+
+  body::after {
+    content: ""; position: fixed; inset: 0; pointer-events: none; z-index: 99;
+    background: repeating-linear-gradient(0deg, rgba(0,0,0,.12) 0 1px, transparent 1px 3px);
+  }
+
+  #app {
+    width: min(94vw, 720px);
+    background: #1f1830;
+    padding: 18px;
+    position: relative;
+    box-shadow:
+      0 0 0 3px #120b1c,
+      0 0 0 6px #d98fb8,
+      0 0 0 9px #120b1c,
+      0 0 40px rgba(217,143,184,.25);
+    transition: opacity .35s ease;
+  }
+  #app.fade { opacity: 0; }
+
+  .topbar {
+    display: flex; flex-direction: column; align-items: center;
+    gap: 8px; margin-bottom: 14px;
+    font-size: 9px; color: #b9a8c9;
+  }
+  #clock { color: #ffd966; text-align: center; }
+  .controls {
+    display: flex; flex-wrap: wrap; justify-content: center; gap: 6px;
+  }
+  .topbar button {
+    font-family: "Press Start 2P", "Courier New", monospace;
+    cursor: pointer;
+    transition: transform .08s ease, box-shadow .08s ease, background .15s;
+    background: #2a2038; color: #b9a8c9; border: 2px solid #5d4a72;
+    font-size: 8px; padding: 6px 8px;
+  }
+  .topbar button:hover { background: #d98fb8; color: #1d1728; border-color: #d98fb8; }
+
+  button.choice, button.next, .centerbtn {
+    font-family: "Press Start 2P", "Courier New", monospace;
+    cursor: pointer;
+    transition: transform .08s ease, box-shadow .08s ease, background .15s;
+  }
+
+  .title { text-align: center; margin: 16px 0 26px; }
+  .title h1 {
+    font-size: 22px; line-height: 1.5; margin: 0; color: #ff9fcc;
+    text-shadow: 3px 3px 0 #5a2a4a, 0 0 18px rgba(255,159,204,.5);
+    animation: glow 2.4s ease-in-out infinite;
+  }
+  .title p { margin: 14px 0 0; color: #ffd966; font-size: 10px; text-shadow: 2px 2px 0 #5a2a4a; }
+
+  @keyframes glow {
+    0%, 100% { text-shadow: 3px 3px 0 #5a2a4a, 0 0 12px rgba(255,159,204,.35); }
+    50%      { text-shadow: 3px 3px 0 #5a2a4a, 0 0 24px rgba(255,159,204,.75); }
+  }
+
+  .centerbtn {
+    display: block; margin: 26px auto 0;
+    background: #d98fb8; color: #1d1728; border: 0;
+    padding: 14px 22px; font-size: 13px;
+    box-shadow: 0 6px 0 #8a4f72;
+    animation: blink 1.4s steps(2, start) infinite;
+  }
+  .centerbtn:hover { transform: translateY(2px); box-shadow: 0 4px 0 #8a4f72; }
+  .centerbtn:active { transform: translateY(5px); box-shadow: 0 1px 0 #8a4f72; }
+  @keyframes blink { 50% { opacity: .7; } }
+
+  #scenePic {
+    display: block; width: 100%; height: auto;
+    image-rendering: pixelated;
+    border: 3px solid #5d4a72; background: #0c0a12;
+    margin-bottom: 12px;
+  }
+
+  .text {
+    font-family: "Courier New", monospace;
+    font-size: 15px; line-height: 1.65; min-height: 110px;
+    background: #15101f; border: 2px solid #3b2d52;
+    padding: 14px 16px; box-shadow: inset 0 0 18px rgba(0,0,0,.4);
+  }
+  .text p { margin: 0 0 10px; }
+  .text p:last-child { margin-bottom: 0; }
+
+  .reaction {
+    border-left: 4px solid #ffd966; padding: 8px 12px;
+    background: rgba(255,217,102,.06);
+    color: #ffe9b8; font-style: italic;
+    margin-bottom: 14px;
+  }
+
+  .buttons { display: flex; flex-direction: column; gap: 10px; margin-top: 16px; }
+  button.choice, button.next {
+    background: #2a2038; color: #f7e9f0;
+    border: 2px solid #d98fb8;
+    box-shadow: 0 4px 0 #6b3d58;
+    padding: 12px 14px; font-size: 10px; text-align: left; line-height: 1.7;
+  }
+  button.choice:hover, button.next:hover {
+    background: #d98fb8; color: #1d1728;
+    transform: translateY(2px); box-shadow: 0 2px 0 #6b3d58;
+  }
+  button.choice:active, button.next:active { transform: translateY(4px); box-shadow: none; }
+  button.next { background: #3a2a4d; }
+
+  .hidden { display: none !important; }
+
+  #confetti {
+    position: fixed; inset: 0; width: 100%; height: 100%;
+    pointer-events: none; z-index: 100;
+  }
+
+  @media (max-width: 480px) {
+    .title h1 { font-size: 16px; }
+    .title p { font-size: 8px; }
+    .text { font-size: 14px; }
+    button.choice, button.next { font-size: 9px; }
+    .topbar button { font-size: 7px; padding: 5px 6px; }
+    .controls { gap: 4px; }
+  }
+</style>
+</head>
+<body>
+<div id="app">
+  <div class="topbar">
+    <span id="clock"></span>
+    <span class="controls">
+      <button id="musicBtn">🎵 hudba ON</button>
+      <button id="soundBtn">🔊 zvuk ON</button>
+      <button id="restartBtn">Restart</button>
+    </span>
+  </div>
+
+  <div id="intro">
+    <div class="title">
+      <h1>OPERACE SVÁTEK</h1>
+      <p>Středa 11. listopadu</p>
+    </div>
+    <button class="centerbtn" id="startBtn">START</button>
+  </div>
+
+  <div id="game" class="hidden">
+    <img id="scenePic" alt="">
+    <div class="text" id="text"></div>
+    <div class="buttons" id="buttons"></div>
+  </div>
+</div>
+
+<canvas id="confetti" class="hidden"></canvas>
+
+<script>
+// =====================================================
+// ZVUK
+// =====================================================
+let soundOn = true;
+let musicOn = true;
+let actx = null;
+function getCtx() {
+  actx = actx || new (window.AudioContext || window.webkitAudioContext)();
+  if (actx.state === "suspended") actx.resume();
+  return actx;
+}
+function tone(freq, dur = 0.08, type = "triangle", vol = 0.04) {
+  if (!soundOn) return;
+  try {
+    const c = getCtx();
+    const o = c.createOscillator(), g = c.createGain();
+    o.type = type; o.frequency.value = freq; g.gain.value = vol;
+    o.connect(g); g.connect(c.destination);
+    o.start(); o.stop(c.currentTime + dur);
+  } catch (e) {}
+}
+const sfxClick = () => tone(520, 0.05, "square", 0.02);
+const sfxMail  = () => { tone(880, 0.12, "triangle", 0.03); setTimeout(() => tone(1175, 0.15, "triangle", 0.03), 120); };
+
+// =====================================================
+// HUDBA
+// 1) pokud existuje lofi.mp3, přehraje se ve smyčce
+// 2) jinak se zapne vestavěná lo-fi smyčka
+// =====================================================
+let bgAudio = null;
+
+const progression = [
+  [220.00, 261.63, 329.63, 392.00],
+  [174.61, 220.00, 261.63, 329.63],
+  [261.63, 329.63, 392.00, 493.88],
+  [196.00, 246.94, 293.66, 392.00]
+];
+const melodyNotes = [440.00, 523.25, 587.33, 659.25, 783.99, 880.00];
+const BAR = 2.8;
+const MASTER_VOL = 0.18;
+let musicTimer = null;
+let musicStep = 0;
+let noiseBuf = null;
+
+function getNoise() {
+  if (noiseBuf) return noiseBuf;
+  const c = getCtx();
+  noiseBuf = c.createBuffer(1, c.sampleRate * 2, c.sampleRate);
+  const d = noiseBuf.getChannelData(0);
+  for (let i = 0; i < d.length; i++) d[i] = (Math.random() * 2 - 1) * 0.5;
+  return noiseBuf;
+}
+function padNote(freq, when, dur, vol, dest) {
+  const c = getCtx();
+  [-5, 5].forEach(det => {
+    const o = c.createOscillator(), g = c.createGain();
+    o.type = "sine"; o.frequency.value = freq; o.detune.value = det;
+    g.gain.setValueAtTime(0, when);
+    g.gain.linearRampToValueAtTime(vol, when + 0.6);
+    g.gain.linearRampToValueAtTime(0, when + dur);
+    o.connect(g); g.connect(dest);
+    o.start(when); o.stop(when + dur + 0.1);
+  });
+}
+function pluck(freq, when, dest) {
+  const c = getCtx();
+  const o = c.createOscillator(), g = c.createGain();
+  o.type = "triangle"; o.frequency.value = freq;
+  g.gain.setValueAtTime(0, when);
+  g.gain.linearRampToValueAtTime(0.5, when + 0.02);
+  g.gain.exponentialRampToValueAtTime(0.001, when + 1.6);
+  o.connect(g); g.connect(dest);
+  o.start(when); o.stop(when + 1.7);
+}
+function musicBar() {
+  if (!musicOn) return;
+  try {
+    const c = getCtx();
+    const t0 = c.currentTime + 0.05;
+    const master = c.createGain();
+    master.gain.value = MASTER_VOL;
+    master.connect(c.destination);
+    const warm = c.createBiquadFilter();
+    warm.type = "lowpass"; warm.frequency.value = 1100; warm.Q.value = 0.4;
+    warm.connect(master);
+
+    const chord = progression[musicStep % progression.length];
+    chord.forEach((f, i) => padNote(f, t0 + i * 0.08, BAR * 1.05, 0.018, warm));
+
+    const bass = c.createOscillator(), bg = c.createGain();
+    bass.type = "sine"; bass.frequency.value = chord[0] / 2;
+    bg.gain.setValueAtTime(0, t0);
+    bg.gain.linearRampToValueAtTime(0.04, t0 + 0.1);
+    bg.gain.linearRampToValueAtTime(0, t0 + BAR);
+    bass.connect(bg); bg.connect(warm);
+    bass.start(t0); bass.stop(t0 + BAR + 0.1);
+
+    [0.0, 0.75, 1.5, 2.25].forEach((off, i) => {
+      if (Math.random() < 0.6) {
+        const note = melodyNotes[(musicStep + i * 2) % melodyNotes.length];
+        pluck(note, t0 + off + (i % 2 === 1 ? 0.06 : 0), warm);
+      }
+    });
+
+    [0, BAR / 2].forEach(off => {
+      const k = c.createOscillator(), kg = c.createGain();
+      k.frequency.setValueAtTime(80, t0 + off);
+      k.frequency.exponentialRampToValueAtTime(35, t0 + off + 0.2);
+      kg.gain.setValueAtTime(0.07, t0 + off);
+      kg.gain.exponentialRampToValueAtTime(0.001, t0 + off + 0.3);
+      k.connect(kg); kg.connect(master);
+      k.start(t0 + off); k.stop(t0 + off + 0.35);
+    });
+
+    const n = c.createBufferSource(), ng = c.createGain(), nf = c.createBiquadFilter();
+    n.buffer = getNoise();
+    nf.type = "highpass"; nf.frequency.value = 3000;
+    ng.gain.value = 0.003;
+    n.connect(nf); nf.connect(ng); ng.connect(master);
+    n.start(t0); n.stop(t0 + BAR);
+    musicStep++;
+  } catch (e) {}
+}
+function startProcedural() {
+  if (!musicOn || musicTimer) return;
+  musicBar();
+  musicTimer = setInterval(musicBar, BAR * 1000);
+}
+function stopProcedural() {
+  clearInterval(musicTimer);
+  musicTimer = null;
+}
+
+function startMusic() {
+  if (!musicOn) return;
+  if (bgAudio && !bgAudio.paused) return;
+  try {
+    if (!bgAudio) {
+      bgAudio = new Audio("lofi.mp3");
+      bgAudio.loop = true;
+      bgAudio.volume = 0.3;
+      bgAudio.onerror = () => { bgAudio = null; startProcedural(); };
+    }
+    bgAudio.play().catch(() => { bgAudio = null; startProcedural(); });
+  } catch (e) {
+    startProcedural();
+  }
+}
+function stopMusic() {
+  if (bgAudio) bgAudio.pause();
+  stopProcedural();
+}
+
+// Znělka při volbě Teorie velkého třesku: přestane hudba a přehraje se theme.mp3,
+// pokud existuje, jinak vestavěná znělka
+function playTheme() {
+  stopMusic();
+  try {
+    const audio = new Audio("theme.mp3");
+    audio.volume = 0.6;
+    audio.play().catch(() => playFallbackJingle());
+  } catch (e) { playFallbackJingle(); }
+}
+function playFallbackJingle() {
+  if (!soundOn) return;
+  const c = getCtx();
+  const motif = [
+    [523.25, 0.18], [659.25, 0.18], [783.99, 0.18], [659.25, 0.18],
+    [783.99, 0.35], [1046.5, 0.18], [987.77, 0.18], [1046.5, 0.5]
+  ];
+  let t = c.currentTime + 0.1;
+  motif.forEach(([f, d]) => {
+    const o = c.createOscillator(), g = c.createGain();
+    o.type = "triangle"; o.frequency.value = f;
+    g.gain.setValueAtTime(0, t);
+    g.gain.linearRampToValueAtTime(0.07, t + 0.02);
+    g.gain.exponentialRampToValueAtTime(0.001, t + d);
+    o.connect(g); g.connect(c.destination);
+    o.start(t); o.stop(t + d + 0.05);
+    t += d;
+  });
+}
+
+// =====================================================
+// KONFETY
+// =====================================================
+function confetti() {
+  const cv = document.getElementById("confetti");
+  cv.classList.remove("hidden");
+  cv.width = window.innerWidth;
+  cv.height = window.innerHeight;
+  const ctx = cv.getContext("2d");
+  const colors = ["#ff9fcc", "#ffd966", "#7ad7ff", "#c9a6ff", "#7fff9e"];
+  const pieces = Array.from({ length: 140 }, () => ({
+    x: Math.random() * cv.width,
+    y: -Math.random() * cv.height,
+    vx: (Math.random() - 0.5) * 2,
+    vy: 2 + Math.random() * 3,
+    s: 6 + Math.random() * 6,
+    r: Math.random() * Math.PI,
+    vr: (Math.random() - 0.5) * 0.2,
+    c: colors[Math.floor(Math.random() * colors.length)]
+  }));
+  let frames = 0;
+  function step() {
+    ctx.clearRect(0, 0, cv.width, cv.height);
+    pieces.forEach(p => {
+      p.x += p.vx; p.y += p.vy; p.r += p.vr;
+      ctx.save();
+      ctx.translate(p.x, p.y); ctx.rotate(p.r);
+      ctx.fillStyle = p.c;
+      ctx.fillRect(-p.s / 2, -p.s / 4, p.s, p.s / 2);
+      ctx.restore();
+    });
+    frames++;
+    if (frames < 260) requestAnimationFrame(step);
+    else { ctx.clearRect(0, 0, cv.width, cv.height); cv.classList.add("hidden"); }
+  }
+  step();
+}
+
+// =====================================================
+// PŘÍBĚH
+// =====================================================
+const flags = { email: "", niki: "", box: "", work: "", work2: "", gift: "", tv: "" };
+let watched = new Set();
+
+const scenes = {
+  s1: {
+    time: "10:12 · Martinův pokoj", img: "1.png",
+    text: `<p>Martin sedí u počítače. Na jednom monitoru běží Illustrator, na druhém tucet dalších oken. Vedle klávesnice stojí hrnek s horkým čajem.</p>
+           <p><b>Předmět: Drobné úpravy – opravdu jen maličkost</b></p>
+           <p><i>„Dobrý den, Martine, potřebovali bychom ještě lehce upravit grafiku. Stačilo by posunout logo o pár pixelů, změnit barvu nadpisu a možná trochu překopat celou kompozici. Myslíte, že by to šlo ještě dnes?“</i></p>`,
+    choices: [
+      { label: "„Jasně, pošlete mi podklady.“", set: ["email","A"],
+        reaction: "Podklady přišly. Sedm stran poznámek, šest barevných variant a nové logo. Hned potom přišla žádost o druhou variantu pro porovnání.", next: "s2" },
+      { label: "„Dnes už mám bohužel plno.“", set: ["email","B"],
+        reaction: "Klient odpověděl, že to vůbec nespěchá, zítra je to v pohodě. Martin si ušetřil práci. Za pět minut přišel dotaz na cenovou nabídku.", next: "s2" },
+      { label: "„Můžete mi přesně specifikovat úpravy?“", set: ["email","C"],
+        reaction: "Klient poslal dokument FINALNI_ZADANI_OPRAVDU_FINAL.docx. Má 14 stran. Na poslední straně stojí, že finální podobu nechává na Martinově kreativním cítění.", next: "s2" },
+      { label: "Ignorovat e-mail.", set: ["email","D"],
+        reaction: "Chvíli bylo ticho. Pak přišla připomínka. Pak druhá připomínka. Krátký klid to byl, ale pracovní den pokračuje.", next: "s2" }
+    ]
+  },
+
+  s2: {
+    time: "10:40 · Teams", img: "1.png",
+    text: () => `<p>Na Teams přibyla zpráva: <i>„Dobrý den, potřebovali bychom připravit leták na novou akci. Je to jednoduché, stačí to jen trochu učesat.“</i></p>
+           <p>V příloze je Word: 23 stran, osm fontů, text v pěti barvách, fotky v mizerném rozlišení, logo jako screenshot.</p>
+           <p><i>„Prosím zachovat současný vzhled, ale udělat to modernější.“</i></p>
+           ${flags.email === "D" ? "<p>Připomínky z e-mailu stále čekají ve složce Doručené.</p>" : ""}
+           ${flags.email === "B" ? "<p>Klient se ozval znovu. Chce cenovou nabídku ještě dnes.</p>" : ""}`,
+    choices: [
+      { label: "Pustit se do letáku.", set: ["work","A"],
+        reaction: "První stránka zabrala hodinu. Klient pak oznámil, že chce úplně jiný styl.", next: "s3" },
+      { label: "Zavolat klientovi.", set: ["work","B"],
+        reaction: "Klient vysvětlil, že manželka chce barevnější leták. Na otázku, jak si to představuje, odpověděl: „To nechám na vás. Vy jste přece grafik.“", next: "s3" },
+      { label: "Vyžádat si pořádné podklady.", set: ["work","C"],
+        reaction: "Přišly nové soubory. Jsou to stejné nekvalitní fotografie, jen uložené v PowerPointu.", next: "s3" },
+      { label: "Nechat práci být a jít do obýváku.", set: ["work","D"],
+        reaction: "Martin zavřel Word, nechal ho otevřený a šel se podívat, co Niki dělá.", next: "s3" }
+    ]
+  },
+
+  s3: {
+    time: "10:45 · Obývák", img: "2.jpg",
+    text: () => `<p>Niki sedí na gauči. Na posteli leží balicí papír, nůžky, stuha a malá krabička. Když Martin vejde, rychle něco schová.</p>
+           <p><i>Martin:</i> „Co se děje?“</p>
+           <p><i>Niki:</i> „Nic.“</p>
+           <p><i>Martin:</i> „To je podezřelé nic.“</p>
+           <p><i>Niki:</i> „Nemůžeš dneska chvíli nepracovat?“</p>`,
+    choices: [
+      { label: "„Dobře, co potřebuješ?“", set: ["niki","A"],
+        reaction: "Niki řekla, že by chtěla, aby Martin alespoň na chvíli vypnul pracovní režim. Krabičku ale nechtěla ukázat.", next: "s4" },
+      { label: "„Ty mi něco tajíš, že jo?“", set: ["niki","B"],
+        reaction: "Martin se pokusil nakouknout za její záda. Niki krabičku rychle schovala za polštář. „Nekoukej!“", next: "s4" },
+      { label: "„Mám ještě práci, ale za chvíli přijdu.“", set: ["niki","C"],
+        reaction: "Martin se vrátil k počítači. Niki si povzdechla a pokračovala v přípravách.", next: "s4" },
+      { label: "„Dneska mám svátek, dám si deset minut pauzu.“", set: ["niki","D"],
+        reaction: "Martin se posadil na gauč. Niki zvedla obočí: „Počkej… ty sis sám vzpomněl, že máš svátek?“", next: "s4" }
+    ]
+  },
+
+  s4: {
+    time: "10:52 · Obývák", img: "3.png",
+    text: () => `<p>Krabička leží na posteli, zavázaná stuhou. Martin si ji měří pohledem.</p>
+           ${flags.niki === "D" ? "<p>Niki si pro jistotu stoupla mezi něj a krabičku.</p>" : ""}`,
+    choices: [
+      { label: "Zeptat se přímo, co dostane.", set: ["box","A"],
+        reaction: "<i>Niki:</i> „Kdybych ti to řekla, nebylo by to překvapení.“ <i>Martin:</i> „Logicky správně, ale informačně naprosto nedostatečné.“", next: "s5" },
+      { label: "Nenápadně otevřít krabičku.", set: ["box","B"],
+        reaction: "Niki ho okamžitě zastavila: „Ani náhodou!“ Krabička zůstala zavřená a Martin dostal zákaz sahat.", next: "s5" },
+      { label: "Nechat překvapení překvapením.", set: ["box","C"],
+        reaction: "Martin řekl, že počká. Niki byla spokojená.", next: "s5" },
+      { label: "Nabídnout pomoc s balením.", set: ["box","D"],
+        reaction: "Niki mu podala stuhu. Martin začal balit tak precizně, že se Niki musela smát: „Ty to balíš jako tisková data.“ „Aspoň to má spadávku.“ „Bože…“", next: "s5" }
+    ]
+  },
+
+  s5: {
+    time: "12:18 · Martinův pokoj", img: "1.png",
+    text: () => `<p>Martin se vrátil k počítači. Přišel další e-mail:</p>
+           <p><i>„Dobrý den, Martine, potřebovali bychom ještě jednu rychlou úpravu. Je to opravdu na pět minut.“</i></p>
+           <p>Příloha: <b>novy_navrh_final_7.psd</b></p>`,
+    choices: [
+      { label: "Přijmout další zakázku.", set: ["work2","A"],
+        reaction: "Klient přidal další tři varianty. Martin otevřel Photoshop a pracovní den se protáhl.", next: "s6" },
+      { label: "Odmítnout.", set: ["work2","B"],
+        reaction: "Klient odpověděl, že se ozve příští týden. Martin poprvé za celý den vyhrál.", next: "s6" },
+      { label: "Oznámit, že dnes končí.", set: ["work2","C"],
+        reaction: "Martin uložil práci a zavřel počítač. Zobrazilo se okno: „Opravdu chcete ukončit aplikaci?“ Klikl na ANO. Malý zázrak se stal.", next: "s6" },
+      { label: "Nechat to na večer.", set: ["work2","D"],
+        reaction: "Martin zavřel e-mail, počítač ale nechal zapnutý. Z obýváku se ozvalo: „To říkáš vždycky!“", next: "s6" }
+    ]
+  },
+
+  s6: {
+    time: "17:42 · Obývák", img: "4.png",
+    text: () => `<p>Venku se stmívá. Obývák je připravený, na posteli něco dobrého a dárek.</p>
+           <p><i>Niki:</i> „Tak co, pane oslavenče?“</p>
+           <p><i>Martin:</i> „Tohle jsi připravila pro mě?“</p>
+           <p><i>Niki:</i> „Ne, pro souseda. Jasně, že pro tebe.“</p>`,
+    choices: [
+      { label: "Rozbalit dárek okamžitě.", set: ["gift","A"],
+        reaction: "Martin dárek otevřel a poděkoval. Niki měla radost, že se trefila.", next: "s7" },
+      { label: "Nejdřív poděkovat.", set: ["gift","B"],
+        reaction: "Martin Niki poděkoval a ocenil přípravy. <i>Niki:</i> „Tak už žádná práce, ano?“", next: "s7" },
+      { label: "Zeptat se, jestli je v krabičce něco technologického.", set: ["gift","C"],
+        reaction: "<i>Niki:</i> „Ty bys našel technologii i v krabici od bot.“ <i>Martin:</i> „To záleží na krabici.“", next: "s7" },
+      { label: "Začít hádat, co dostane.", set: ["gift","D"],
+        reaction: "Martin tipoval klávesnici, myš i něco do pracovny. Niki všechno odmítla. „Výborně. Tak to má překvapení pořád smysl.“", next: "s7" }
+    ]
+  },
+
+  s7: {
+    time: "20:16 · Obývák", img: "5.png",
+    text: () => `<p>Martin a Niki sedí na gauči. Martin vezme ovladač.</p>
+           <p><i>Martin:</i> „Tak co si pustíme?“</p>
+           <p>Niki se zachumlá do deky a čeká.</p>`,
+    choices: [
+      { label: "M*A*S*H", set: ["tv","mash"], back: true,
+        reaction: "<i>Niki:</i> „M*A*S*H? Co jsme? Nějací starý boomři?“ <i>Martin:</i> „Vždyť je to dobrý.“ <i>Niki:</i> „To neříkám. Ale dneska fakt nechci.“" },
+      { label: "NCIS", set: ["tv","ncis"], back: true,
+        reaction: "<i>Niki:</i> „Prosím tě, není deset večer a nekoukáme na Novu jen proto, že nic jiného nedávají.“ <i>Martin:</i> „Ale NCIS je dobrý.“ <i>Niki:</i> „Tak si ho pusť odpoledne. Já chci něco normálního.“" },
+      { label: "Dokument o válce", set: ["tv","doc"], back: true,
+        reaction: "<i>Martin:</i> „Je to historicky zajímavé.“ <i>Niki:</i> „Já neříkám, že není. Ale nechci mít Hitlera jako večerní program.“" },
+      { label: "Teorie velkého třesku", set: ["tv","bbt"], next: "final", theme: true,
+        reaction: "<i>Niki:</i> „JOOOO!“ <i>Martin:</i> „Zase?“ <i>Niki:</i> „Protože je to nejlepší seriál na světě.“ <i>Martin:</i> „To už znám skoro nazpaměť.“ <i>Niki:</i> „Takže víš, že se ti bude líbit.“" }
+    ]
+  },
+
+  final: {
+    time: "20:20 · Obývák", img: "6.png", final: true,
+    text: () => `<p>Martin spustil první díl.</p>
+           <p><i>Vypravěč:</i> M*A*S*H dnes neprošel. NCIS také ne. Dokument o Hitlerovi už vůbec ne. Teorie velkého třesku opět vítězí. Niki je spokojená. Martin už méně překvapený.</p>
+           <p>Na obrazovce zazněla úvodní znělka. Sheldon se vzápětí zeptal, kdo sedí na jeho místě. Martin se podíval na Niki a ta jen řekla: <i>„Bazinga.“</i></p>
+           <p><b>Všechno nejlepší k svátku!</b></p>
+           <p>Dneska už žádné deadliny, žádné korektury a žádné posouvání o dva pixely doleva.</p>
+           <p>Dneska máš volno.</p>
+           <p><b>S láskou, Niki ♥</b></p>
+           <p><b>PŘEŽIL JSI DALŠÍ ROK TOHO, ŽE JSI MARTIN.</b></p>`,
+    choices: []
+  }
+};
+
+// =====================================================
+// ENGINE
+// =====================================================
+const $ = id => document.getElementById(id);
+
+function setPic(src) {
+  const pic = $("scenePic");
+  pic.onerror = () => { pic.removeAttribute("src"); };
+  pic.src = src;
+}
+
+function render(id) {
+  const s = scenes[id];
+  const app = $("app");
+  app.classList.add("fade");
+  setTimeout(() => {
+    app.classList.remove("fade");
+    $("clock").textContent = s.time;
+    setPic(s.img);
+    $("text").innerHTML = typeof s.text === "function" ? s.text() : s.text;
+    $("buttons").innerHTML = "";
+
+    const choices = (id === "s7")
+      ? s.choices.filter(c => !watched.has(c.set[1]))
+      : s.choices;
+
+    choices.forEach(c => addButton(c.label, () => { sfxClick(); pick(c); }, "choice"));
+
+    if (s.final) {
+      addButton("Hrát znovu", restart, "next");
+      confetti();
+    }
+  }, 350);
+}
+
+function addButton(label, onClick, cls) {
+  const b = document.createElement("button");
+  b.className = cls;
+  b.textContent = label;
+  b.onclick = onClick;
+  $("buttons").appendChild(b);
+}
+
+function showReaction(html, onContinue) {
+  $("text").innerHTML = `<div class="reaction">${html}</div>`;
+  $("buttons").innerHTML = "";
+  addButton("Pokračovat", () => { sfxClick(); onContinue(); }, "next");
+}
+
+function pick(c) {
+  if (c.set) flags[c.set[0]] = c.set[1];
+  if (c.set && c.set[0] === "email") sfxMail();
+
+  if (c.back) {
+    watched.add(c.set[1]);
+    showReaction(c.reaction, () => render("s7"));
+    return;
+  }
+  if (c.theme) playTheme();
+  showReaction(c.reaction, () => render(c.next));
+}
+
+function startGame() {
+  $("intro").classList.add("hidden");
+  $("game").classList.remove("hidden");
+  watched = new Set();
+  Object.keys(flags).forEach(k => flags[k] = "");
+  musicStep = 0;
+  stopMusic();
+  startMusic();
+  render("s1");
+}
+
+function restart() {
+  stopMusic();
+  startGame();
+}
+
+// =====================================================
+// OVLÁDÁNÍ
+// =====================================================
+$("startBtn").onclick = () => { sfxClick(); startGame(); };
+
+$("restartBtn").onclick = () => {
+  sfxClick();
+  restart();
+};
+
+$("soundBtn").onclick = e => {
+  soundOn = !soundOn;
+  e.target.textContent = soundOn ? "🔊 zvuk ON" : "🔈 zvuk OFF";
+};
+
+$("musicBtn").onclick = e => {
+  musicOn = !musicOn;
+  e.target.textContent = musicOn ? "🎵 hudba ON" : "🎵 hudba OFF";
+  if (musicOn) startMusic(); else stopMusic();
+};
+</script>
+
+</body></html>
